@@ -47,39 +47,21 @@ jobs:
           name: codeql-sarif
           path: codeql-results/**/*.sarif
 
+  
   create_issues:
-    name: Create issues from dummy SARIF
+    name: Create issues from SARIF
     runs-on: ubuntu-latest
+    needs: analyze
     permissions:
+      contents: read
+      security-events: read
       issues: write
-
     steps:
-      - name: Prepare dummy SARIF
-        run: |
-          mkdir -p sarif-result
-          cat <<'EOF' > sarif-result/test.sarif
-          {
-            "runs": [
-              {
-                "results": [
-                  {
-                    "ruleId": "demo-rule",
-                    "level": "error",
-                    "message": { "text": "This is a test high severity issue" },
-                    "locations": [
-                      {
-                        "physicalLocation": {
-                          "artifactLocation": { "uri": "src/test.js" }
-                        }
-                      }
-                    ]
-                  }
-                ]
-              }
-            ]
-          }
-          EOF
-
+      - name: Download CodeQL SARIF results
+        uses: actions/download-artifact@v4
+        with:
+          name: codeql-sarif
+          path: sarif-result
 
       - name: Parse SARIF and create issues
         uses: actions/github-script@v7
