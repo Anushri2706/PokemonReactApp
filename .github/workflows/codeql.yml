@@ -85,14 +85,16 @@ jobs:
                   **Message:** ${message}  
                   **File:** ${file}
 
+                This issue was auto-created and assigned to **GitHub Copilot Autofix**.
+                  `;
 
-                  await github.rest.issues.create({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    title: issueTitle,
-                    body: issueBody,
-                    assignees: ["github-copilot-autofix"]
-                  });
+                await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: issueTitle,
+                body: issueBody,
+                assignees: ["github-copilot-autofix"]
+            });
                 }
               }
             }
