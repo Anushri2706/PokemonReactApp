@@ -115,7 +115,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       issues: write
-    if: ${{ github.event_name == 'workflow_dispatch' }}  # only runs on manual trigger
 
     steps:
       - name: Prepare dummy SARIF
