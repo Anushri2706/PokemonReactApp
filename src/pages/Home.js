@@ -7,6 +7,7 @@ function About() {
     <div>
       <>
       <MainPage/>
+      
       </>
     </div>
   )
