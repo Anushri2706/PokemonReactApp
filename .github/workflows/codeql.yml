@@ -109,7 +109,7 @@ jobs:
                 }
               }
             }
-  # 🔹 Dummy test mode: generates fake SARIF and creates issue
+
   dummy_test:
     name: Dummy SARIF Issue Test
     runs-on: ubuntu-latest
@@ -177,7 +177,7 @@ jobs:
                   repo: context.repo.repo,
                   title: issueTitle,
                   body: issueBody,
-                  assignees: ["github-copilot-autofix"]
+                  assignees: ["Anushri2706"]
                 });
               }
             }
