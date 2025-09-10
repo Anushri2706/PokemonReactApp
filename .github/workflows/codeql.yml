@@ -98,18 +98,18 @@ jobs:
 
                   const issueTitle = `CodeQL: [${severity}] ${ruleId}`;
                   const issueBody = `
-**High/Critical CodeQL finding**
+                                    **High/Critical CodeQL finding**
 
-**Rule:** ${ruleId}  
-**Message:** ${message}  
-**File:** ${file}
+                                     **Rule:** ${ruleId}  
+                                     **Message:** ${message}  
+                                     **File:** ${file}
 
----
 
-This issue was auto-created and assigned to **GitHub Copilot Autofix**.
-`;
 
-                  await github.rest.issues.create({
+                  This issue was auto-created and assigned to **GitHub Copilot Autofix**.
+                    `;
+
+                  await github.rest.issues.create({          
                     owner: context.repo.owner,
                     repo: context.repo.repo,
                     title: issueTitle,
