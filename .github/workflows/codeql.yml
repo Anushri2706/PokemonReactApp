@@ -67,7 +67,7 @@ jobs:
         with:
           script: |
             const fs = require("fs");
-            const sarif = JSON.parse(fs.readFileSync("sarif-result/results.sarif", "utf8"));
+            const sarif = JSON.parse(fs.readFileSync("sarif-result/codeql-sarif", "utf8"));
 
             for (const run of sarif.runs || []) {
               for (const result of run.results || []) {
@@ -78,24 +78,21 @@ jobs:
                   const file = result.locations?.[0]?.physicalLocation?.artifactLocation?.uri || "unknown file";
 
                   const issueTitle = `CodeQL: [${severity}] ${ruleId}`;
-                 const issueBody = `
-                 **High/Critical CodeQL finding**
+                  const issueBody = `
+                  **High/Critical CodeQL finding**
 
-                 **Rule:** ${ruleId}  
-                 **Message:** ${message}  
-                 **File:** ${file}
+                  **Rule:** ${ruleId}  
+                  **Message:** ${message}  
+                  **File:** ${file}
 
 
-                 This issue was auto-created and assigned to **GitHub Copilot Autofix**.
-                   `;
-
-               await github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: issueTitle,
-               body: issueBody,
-              assignees: ["github-copilot-autofix"]
-              });
+                  await github.rest.issues.create({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    title: issueTitle,
+                    body: issueBody,
+                    assignees: ["github-copilot-autofix"]
+                  });
                 }
               }
             }
