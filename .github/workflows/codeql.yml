@@ -78,21 +78,24 @@ jobs:
                   const file = result.locations?.[0]?.physicalLocation?.artifactLocation?.uri || "unknown file";
 
                   const issueTitle = `CodeQL: [${severity}] ${ruleId}`;
-                  const issueBody = `
-                  **High/Critical CodeQL finding**
+                 const issueBody = `
+                 **High/Critical CodeQL finding**
 
-                  **Rule:** ${ruleId}  
-                  **Message:** ${message}  
-                  **File:** ${file}
+                 **Rule:** ${ruleId}  
+                 **Message:** ${message}  
+                 **File:** ${file}
 
 
-                  await github.rest.issues.create({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    title: issueTitle,
-                    body: issueBody,
-                    assignees: ["github-copilot-autofix"]
-                  });
+                 This issue was auto-created and assigned to **GitHub Copilot Autofix**.
+                   `;
+
+               await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: issueTitle,
+               body: issueBody,
+              assignees: ["github-copilot-autofix"]
+              });
                 }
               }
             }
