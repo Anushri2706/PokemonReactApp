@@ -1,6 +1,6 @@
 on:
   workflow_run:
-    workflows: ["CodeQL"]
+    workflows: ["My CodeQL scanner"]
     types:
       - completed
 
