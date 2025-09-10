@@ -109,3 +109,76 @@ jobs:
                 }
               }
             }
+  # 🔹 Dummy test mode: generates fake SARIF and creates issue
+  dummy_test:
+    name: Dummy SARIF Issue Test
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    if: ${{ github.event_name == 'workflow_dispatch' }}  # only runs on manual trigger
+
+    steps:
+      - name: Prepare dummy SARIF
+        run: |
+          mkdir -p sarif-result
+          cat <<'EOF' > sarif-result/test.sarif
+          {
+            "runs": [
+              {
+                "results": [
+                  {
+                    "ruleId": "demo-rule",
+                    "level": "error",
+                    "message": { "text": "This is a test high severity issue" },
+                    "locations": [
+                      {
+                        "physicalLocation": {
+                          "artifactLocation": { "uri": "src/test.js" }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+          EOF
+
+      - name: Parse dummy SARIF and create issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require("fs");
+            const sarif = JSON.parse(fs.readFileSync("sarif-result/test.sarif", "utf8"));
+
+            for (const run of sarif.runs || []) {
+              for (const result of run.results || []) {
+                if (result.level !== "error") continue;
+
+                const message = result.message?.text || "";
+                const ruleId = result.ruleId || "unknown-rule";
+                const file = result.locations?.[0]?.physicalLocation?.artifactLocation?.uri || "unknown file";
+
+                const issueTitle = `CodeQL: [${result.level}] ${ruleId}`;
+                const issueBody = `
+                **High/Critical CodeQL finding**
+
+                **Rule:** ${ruleId}  
+                **Message:** ${message}  
+                **File:** ${file}
+
+
+
+              This issue was auto-created (dummy test) and assigned to **GitHub Copilot Autofix**.
+             `;
+
+                console.log("Creating test issue:", issueTitle);
+                await github.rest.issues.create({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  title: issueTitle,
+                  body: issueBody,
+                  assignees: ["github-copilot-autofix"]
+                });
+              }
+            }
