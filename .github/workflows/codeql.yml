@@ -1,3 +1,4 @@
+name: My CodeQL scanner
 on:
   push:
     branches: [ main ]
@@ -24,7 +25,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'csharp', 'javascript' ]
+        language: ['javascript' ]
 
     steps:
     - name: Checkout repository
@@ -42,5 +43,5 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: codeql-sarif
-        path: sarif-results/*.sarif
+        path: codeql-results/**/*.sarif
       
