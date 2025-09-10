@@ -66,35 +66,45 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const fs = require("fs");
-            const sarif = JSON.parse(fs.readFileSync("sarif-result/codeql-sarif", "utf8"));
+           const fs = require("fs");
+           const path = require("path");
 
-            for (const run of sarif.runs || []) {
-              for (const result of run.results || []) {
+            const sarifDir = "sarif-result";
+            const sarifFiles = fs.readdirSync(sarifDir).filter(f => f.endsWith(".sarif"));
+
+            for (const sarifFile of sarifFiles) {
+              const sarifPath = path.join(sarifDir, sarifFile);
+              const sarif = JSON.parse(fs.readFileSync(sarifPath, "utf8"));
+
+              for (const run of sarif.runs || []) {
+                for (const result of run.results || []) {
                 const severity = result.level;
                 if (severity === "error") {
-                  const message = result.message?.text || "";
-                  const ruleId = result.ruleId || "unknown-rule";
-                  const file = result.locations?.[0]?.physicalLocation?.artifactLocation?.uri || "unknown file";
+                const message = result.message?.text || "";
+                const ruleId = result.ruleId || "unknown-rule";
+                const file = result.locations?.[0]?.physicalLocation?.artifactLocation?.uri || "unknown file";
 
-                  const issueTitle = `CodeQL: [${severity}] ${ruleId}`;
-                  const issueBody = `
-                  **High/Critical CodeQL finding**
+                const issueTitle = `CodeQL: [${severity}] ${ruleId}`;
+                const issueBody = `
+            **High/Critical CodeQL finding**
 
-                  **Rule:** ${ruleId}  
-                  **Message:** ${message}  
-                  **File:** ${file}
+            **Rule:** ${ruleId}  
+            **Message:** ${message}  
+            **File:** ${file}
 
-                This issue was auto-created and assigned to **GitHub Copilot Autofix**.
-                  `;
+---
 
-                await github.rest.issues.create({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                title: issueTitle,
-                body: issueBody,
-                assignees: ["github-copilot-autofix"]
-            });
-                }
-              }
-            }
+This issue was auto-created and assigned to **GitHub Copilot Autofix**.
+`;
+
+           await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: issueTitle,
+              body: issueBody,
+              assignees: ["github-copilot-autofix"]
+        });
+      }
+    }
+  }
+}
