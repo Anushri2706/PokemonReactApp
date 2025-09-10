@@ -1,16 +1,15 @@
 name: My CodeQL scanner
+
 on:
   push:
     branches: [ main ]
   pull_request:
-    # The branches below must be a subset of the branches above
     branches: [ main ]
     paths:
       - "!.github/**"
 
-
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}   
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
 
 jobs:
@@ -25,26 +24,75 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: ['javascript' ]
+        language: ['javascript']
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
-      with:
-        languages: ${{ matrix.language }}
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
 
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
-      with:
-        output: ./codeql-results
-        format: sarif
-    
-    - name: Upload SARIF results
-      uses: actions/upload-artifact@v4
-      with:
-        name: codeql-sarif
-        path: codeql-results/**/*.sarif
-      
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          output: ./codeql-results
+          format: sarif
+
+      - name: Upload SARIF results
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-sarif
+          path: codeql-results/**/*.sarif
+
+  create_issues:
+    name: Create issues from SARIF
+    runs-on: ubuntu-latest
+    needs: analyze
+    permissions:
+      security-events: read
+      issues: write
+
+    steps:
+      - name: Download CodeQL SARIF results
+        uses: actions/download-artifact@v4
+        with:
+          name: codeql-sarif
+          path: sarif-result
+
+      - name: Parse SARIF and create issues
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require("fs");
+            const sarif = JSON.parse(fs.readFileSync("sarif-result/results.sarif", "utf8"));
+
+            for (const run of sarif.runs || []) {
+              for (const result of run.results || []) {
+                const severity = result.level;
+                if (severity === "error") {
+                  const message = result.message?.text || "";
+                  const ruleId = result.ruleId || "unknown-rule";
+                  const file = result.locations?.[0]?.physicalLocation?.artifactLocation?.uri || "unknown file";
+
+                  const issueTitle = `CodeQL: [${severity}] ${ruleId}`;
+                  const issueBody = `
+                  **High/Critical CodeQL finding**
+
+                  **Rule:** ${ruleId}  
+                  **Message:** ${message}  
+                  **File:** ${file}
+
+
+                  await github.rest.issues.create({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    title: issueTitle,
+                    body: issueBody,
+                    assignees: ["github-copilot-autofix"]
+                  });
+                }
+              }
+            }
