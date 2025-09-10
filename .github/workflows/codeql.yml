@@ -46,10 +46,7 @@ jobs:
         with:
           name: codeql-sarif
           path: codeql-results/**/*.sarif
-on:
-  workflow_dispatch:   # run manually from the Actions tab
 
-jobs:
   create_issues:
     name: Create issues from dummy SARIF
     runs-on: ubuntu-latest
