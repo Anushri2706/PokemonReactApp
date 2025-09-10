@@ -5,8 +5,9 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-    paths:
-      - "!.github/**"
+    # If you truly want to ignore .github changes for PRs, use paths-ignore (not a negated pattern in paths)
+    paths-ignore:
+      - ".github/**"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
@@ -24,7 +25,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: ['javascript']
+        language: [ 'javascript' ]
 
     steps:
       - name: Checkout repository
@@ -52,6 +53,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: analyze
     permissions:
+      contents: read
       security-events: read
       issues: write
 
@@ -66,26 +68,36 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-           const fs = require("fs");
-           const path = require("path");
+            const fs = require("fs");
+            const path = require("path");
 
-           const sarifDir = "sarif-result";
-           const sarifFiles = fs.readdirSync(sarifDir).filter(f => f.endsWith(".sarif"));
+            const sarifDir = "sarif-result";
+            if (!fs.existsSync(sarifDir)) {
+              core.setFailed(`SARIF directory not found: ${sarifDir}`);
+              process.exit(1);
+            }
 
-           for (const sarifFile of sarifFiles) {
+            const sarifFiles = fs.readdirSync(sarifDir).filter(f => f.endsWith(".sarif"));
+            if (sarifFiles.length === 0) {
+              core.setFailed(`No .sarif files found in ${sarifDir}`);
+              process.exit(1);
+            }
+
+            for (const sarifFile of sarifFiles) {
               const sarifPath = path.join(sarifDir, sarifFile);
               const sarif = JSON.parse(fs.readFileSync(sarifPath, "utf8"));
 
               for (const run of sarif.runs || []) {
                 for (const result of run.results || []) {
                   const severity = result.level;
-                 if (severity === "error") {
-                   const message = result.message?.text || "";
-                   const ruleId = result.ruleId || "unknown-rule";
-                   const file = result.locations?.[0]?.physicalLocation?.artifactLocation?.uri || "unknown file";
+                  if (severity !== "error") continue; // only high/critical
 
-                   const issueTitle = `CodeQL: [${severity}] ${ruleId}`;
-                   const issueBody = `
+                  const message = result.message?.text || "";
+                  const ruleId = result.ruleId || result.rule?.id || "unknown-rule";
+                  const file = result.locations?.[0]?.physicalLocation?.artifactLocation?.uri || "unknown file";
+
+                  const issueTitle = `CodeQL: [${severity}] ${ruleId}`;
+                  const issueBody = `
 **High/Critical CodeQL finding**
 
 **Rule:** ${ruleId}  
@@ -98,13 +110,12 @@ This issue was auto-created and assigned to **GitHub Copilot Autofix**.
 `;
 
                   await github.rest.issues.create({
-                     owner: context.repo.owner,
-                     repo: context.repo.repo,
-                     title: issueTitle,
-                     body: issueBody,
-                     assignees: ["github-copilot-autofix"]
-        });
-      }
-    }
-  }
-}
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    title: issueTitle,
+                    body: issueBody,
+                    assignees: ["github-copilot-autofix"]
+                  });
+                }
+              }
+            }
