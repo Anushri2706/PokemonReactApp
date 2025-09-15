@@ -203,8 +203,8 @@ jobs:
                   body: issueBody,
                   assignees: ["Anushri2706"]
                 });
+                  }
                 }
               }
-              }
-              }
+            }
             
