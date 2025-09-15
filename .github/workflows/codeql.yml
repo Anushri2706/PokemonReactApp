@@ -166,7 +166,7 @@ jobs:
 
                 const duplicate = existingIssues.find(issue => issue.title === issueTitle);
                 console.log(duplicate);
-                if (duplicate==undefined) {
+                if (!duplicate) {
                   const issueBody = `
                    **High/Critical CodeQL finding**
                    **Rule:** ${ruleId}  
