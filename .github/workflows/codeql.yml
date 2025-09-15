@@ -108,7 +108,7 @@ jobs:
                                      **Message:** ${message}  
                                      **File:** ${file}
 
-                                }
+                                
 
                   This issue was auto-created and assigned to **GitHub Copilot Autofix**.
                     `;
@@ -120,7 +120,7 @@ jobs:
                     body: issueBody,
                     assignees: ["github-copilot-autofix"]
                   });
-                }
+                  }
                 }
               }
             }
@@ -191,7 +191,7 @@ jobs:
                 **Rule:** ${ruleId}  
                 **Message:** ${message}  
                 **File:** ${file}
-                }
+                
                 
 
               This issue was auto-created (dummy test) and assigned to **GitHub Copilot Autofix**.
@@ -203,8 +203,8 @@ jobs:
                   body: issueBody,
                   assignees: ["Anushri2706"]
                 });
+                }
               }
               }
               }
-
             
