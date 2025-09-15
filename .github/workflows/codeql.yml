@@ -72,7 +72,7 @@ jobs:
               for (const run of sarif.runs || []) {
                 for (const result of run.results || []) {
                   const severity = result.level;
-                  if (severity !== "error") continue; // only high/critical
+                  if (severity !== "error") continue; 
                   const message = result.message?.text || "";
                   const ruleId = result.ruleId || result.rule?.id || "unknown-rule";
                   const file = result.locations?.[0]?.physicalLocation?.artifactLocation?.uri || "unknown file";
@@ -84,7 +84,8 @@ jobs:
                     labels: "auto-generated",
                     per_page: 100
                   });
-                  const duplicate = existingIssues.find(issue => issue.title === issueTitle);
+
+                  bool duplicate = existingIssues.find(issue => issue.title === issueTitle);
 
                   if (!duplicate) {
                     const issueBody = `
@@ -160,7 +161,9 @@ jobs:
                   labels: "auto-generated",
                   per_page: 100
                 });
+                
                 const duplicate = existingIssues.find(issue => issue.title === issueTitle);
+                console.log(duplicate);
                 if (!duplicate) {
                   const issueBody = `
                    **High/Critical CodeQL finding**
