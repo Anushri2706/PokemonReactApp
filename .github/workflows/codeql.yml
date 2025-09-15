@@ -1,5 +1,5 @@
-name: My CodeQL scanner
 
+name: My CodeQL scanner
 on:
   push:
     branches: [ main ]
@@ -7,11 +7,9 @@ on:
     branches: [ main ]
     paths-ignore:
       - ".github/**"
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
-
 jobs:
   analyze:
     name: Analyze
@@ -20,34 +18,27 @@ jobs:
       actions: read
       contents: read
       security-events: write
-
     strategy:
       fail-fast: false
       matrix:
         language: [ 'javascript' ]
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
-
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:
           output: ./codeql-results
           format: sarif
-
       - name: Upload SARIF results
         uses: actions/upload-artifact@v4
         with:
           name: codeql-sarif
           path: codeql-results/**/*.sarif
-
-  
   create_issues:
     name: Create issues from SARIF
     runs-on: ubuntu-latest
@@ -62,75 +53,58 @@ jobs:
         with:
           name: codeql-sarif
           path: sarif-result
-
       - name: Parse SARIF and create issues
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require("fs");
             const path = require("path");
-
             const sarifDir = "sarif-result";
             const sarifFiles = fs.readdirSync(sarifDir).filter(f => f.endsWith(".sarif"));
-
             for (const sarifFile of sarifFiles) {
               const sarifPath = path.join(sarifDir, sarifFile);
               const sarif = JSON.parse(fs.readFileSync(sarifPath, "utf8"));
-
               for (const run of sarif.runs || []) {
                 for (const result of run.results || []) {
                   const severity = result.level;
                   if (severity !== "error") continue; // only high/critical
-
                   const message = result.message?.text || "";
                   const ruleId = result.ruleId || result.rule?.id || "unknown-rule";
                   const file = result.locations?.[0]?.physicalLocation?.artifactLocation?.uri || "unknown file";
-
                   const issueTitle = `CodeQL: [${severity}] ${ruleId}`;
-                  //Search for existing issues with the same title to avoid duplicates
+                  // Search for existing issues with the same title
                   const { data: existingIssues } = await github.rest.issues.listForRepo({
-                   owner: context.repo.owner,
-                   repo: context.repo.repo,
-                   state: "open",
-                   labels: "auto-generated",
-                   per_page: 100
-                  }); 
-
-                  const duplicate = existingIssues.find(issue => issue.title === issueTitle);
-
-
-                if (!duplicate){
-
-                  const issueBody = `
-                                    **High/Critical CodeQL finding**
-
-                                     **Rule:** ${ruleId}  
-                                     **Message:** ${message}  
-                                     **File:** ${file}
-
-                                
-
-                  This issue was auto-created and assigned to **GitHub Copilot Autofix**.
-                    `;
-
-                  await github.rest.issues.create({          
                     owner: context.repo.owner,
                     repo: context.repo.repo,
-                    title: issueTitle,
-                    body: issueBody,
-                    assignees: ["github-copilot-autofix"]
+                    state: "open",
+                    labels: "auto-generated",
+                    per_page: 100
                   });
+                  const duplicate = existingIssues.find(issue => issue.title === issueTitle);
+                  if (!duplicate) {
+                    const issueBody = `
+                     **High/Critical CodeQL finding**
+                     **Rule:** ${ruleId}  
+                     **Message:** ${message}  
+                     **File:** ${file}
+                  This issue was auto-created and assigned to **GitHub Copilot Autofix**.
+                    `;
+                    await github.rest.issues.create({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      title: issueTitle,
+                      body: issueBody,
+                      assignees: ["github-copilot-autofix"]
+                    });
                   }
                 }
               }
             }
-
   dummy_test:
     name: Dummy SARIF Issue Test
     runs-on: ubuntu-latest
     permissions:
       issues: write
-
     steps:
       - name: Prepare dummy SARIF
         run: |
@@ -157,54 +131,42 @@ jobs:
             ]
           }
           EOF
-
       - name: Parse dummy SARIF and create issue
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require("fs");
             const sarif = JSON.parse(fs.readFileSync("sarif-result/test.sarif", "utf8"));
-
             for (const run of sarif.runs || []) {
               for (const result of run.results || []) {
                 if (result.level !== "error") continue;
-
                 const message = result.message?.text || "";
                 const ruleId = result.ruleId || "unknown-rule";
                 const file = result.locations?.[0]?.physicalLocation?.artifactLocation?.uri || "unknown file";
-
                 const issueTitle = `CodeQL: [${result.level}] ${ruleId}`;
                 const { data: existingIssues } = await github.rest.issues.listForRepo({
-                   owner: context.repo.owner,
-                   repo: context.repo.repo,
-                   state: "open",
-                   labels: "auto-generated",
-                   per_page: 100
-                  }); 
-
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  state: "open",
+                  labels: "auto-generated",
+                  per_page: 100
+                });
                 const duplicate = existingIssues.find(issue => issue.title === issueTitle);
-
-                if(!duplicate) {
-                const issueBody = `
-                **High/Critical CodeQL finding**
-
-                **Rule:** ${ruleId}  
-                **Message:** ${message}  
-                **File:** ${file}
-                
-                
-
-                   This issue was auto-created (dummy test) and assigned to **GitHub Copilot Autofix**.
-                   `;
-                  await github.rest.issues.create({
+                if (!duplicate) {
+                  const issueBody = `
+                   **High/Critical CodeQL finding**
+                   **Rule:** ${ruleId}  
+                   **Message:** ${message}  
+                   **File:** ${file}
+                 This issue was auto-created (dummy test) and assigned to **GitHub Copilot Autofix**.
+                  `;
+                   await github.rest.issues.create({   
                     owner: context.repo.owner,
                     repo: context.repo.repo,
                     title: issueTitle,
                     body: issueBody,
                     assignees: ["Anushri2706"]
-                    });
-                   }
-                 }
-               }
-             }
-            
+                  });
+                }
+              }
+            }
