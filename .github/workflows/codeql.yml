@@ -162,9 +162,11 @@ jobs:
                   per_page: 100
                 });
                 
+                console.log(existingIssues);
+
                 const duplicate = existingIssues.find(issue => issue.title === issueTitle);
                 console.log(duplicate);
-                if (!duplicate) {
+                if (duplicate==undefined) {
                   const issueBody = `
                    **High/Critical CodeQL finding**
                    **Rule:** ${ruleId}  
