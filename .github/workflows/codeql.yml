@@ -173,14 +173,25 @@ jobs:
                 const file = result.locations?.[0]?.physicalLocation?.artifactLocation?.uri || "unknown file";
 
                 const issueTitle = `CodeQL: [${result.level}] ${ruleId}`;
+                //Search for existing issues with the same title to avoid duplicates
+                  const { data: existingIssues } = await github.rest.issues.listForRepo({
+                   owner: context.repo.owner,
+                   repo: context.repo.repo,
+                   state: "open",
+                   labels: "auto-generated",
+                   per_page: 100
+                  }); 
 
+                  const duplicate = existingIssues.find(issue => issue.title === issueTitle);
+
+                if(!duplicate){
                 const issueBody = `
                 **High/Critical CodeQL finding**
 
                 **Rule:** ${ruleId}  
                 **Message:** ${message}  
                 **File:** ${file}
-
+                }
 
 
               This issue was auto-created (dummy test) and assigned to **GitHub Copilot Autofix**.
