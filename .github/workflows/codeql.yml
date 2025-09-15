@@ -84,9 +84,13 @@ jobs:
                     labels: "auto-generated",
                     per_page: 100
                   });
+                  
+                  console.log(existingIssues);
 
-                  bool duplicate = existingIssues.find(issue => issue.title === issueTitle);
+                  const duplicate = existingIssues.find(issue => issue.title === issueTitle);
 
+                  console.log(duplicate);
+                  
                   if (!duplicate) {
                     const issueBody = `
                      **High/Critical CodeQL finding**
