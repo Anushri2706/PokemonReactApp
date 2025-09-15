@@ -194,17 +194,17 @@ jobs:
                 
                 
 
-              This issue was auto-created (dummy test) and assigned to **GitHub Copilot Autofix**.
-             `;
-                await github.rest.issues.create({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  title: issueTitle,
-                  body: issueBody,
-                  assignees: ["Anushri2706"]
-                });
-                  }
-                }
-              }
-            }
+                   This issue was auto-created (dummy test) and assigned to **GitHub Copilot Autofix**.
+                   `;
+                  await github.rest.issues.create({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    title: issueTitle,
+                    body: issueBody,
+                    assignees: ["Anushri2706"]
+                    });
+                   }
+                 }
+               }
+             }
             
