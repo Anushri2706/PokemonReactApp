@@ -173,13 +173,13 @@ jobs:
                 const file = result.locations?.[0]?.physicalLocation?.artifactLocation?.uri || "unknown file";
 
                 const issueTitle = `CodeQL: [${result.level}] ${ruleId}`;
-                const { data: existingIssues } = await github.rest.issues.listForRepo{
+                const { data: existingIssues } = await github.rest.issues.listForRepo({
                    owner: context.repo.owner,
                    repo: context.repo.repo,
                    state: "open",
                    labels: "auto-generated",
                    per_page: 100
-                  }; 
+                  }); 
 
                 const duplicate = existingIssues.find(issue => issue.title === issueTitle);
 
@@ -203,4 +203,4 @@ jobs:
                   assignees: ["Anushri2706"]
                 });
               }
-            }
+            
