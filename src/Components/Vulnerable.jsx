@@ -1,6 +1,5 @@
 import React from "react";
 
-// ⚠️ Deliberately vulnerable: CodeQL should flag this as XSS
 function Vulnerable({ userInput }) {
   return (
     <div>
