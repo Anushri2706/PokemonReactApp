@@ -86,12 +86,59 @@ jobs:
                   let securitySeverity = 0;
                   if (result.properties?.["security-severity"]) {
                     securitySeverity = parseFloat(result.properties["security-severity"]);
-                  } else if (ruleMap[result.ruleId]?.properties?.["security-severity"]) {
-                    securitySeverity = parseFloat(ruleMap[result.ruleId].properties["security-severity"]);
+                  } else if (
+                    result.ruleId &&
+                    ruleMap[result.ruleId]?.properties?.["security-severity"]
+                  ) {
+                    securitySeverity = parseFloat(
+                      ruleMap[result.ruleId].properties["security-severity"]
+                    );
                   }
 
                   // Only act if it's error OR High/Critical (>= 7.0)
-                  if (!(severity === "error" || securitySeverity >= 7.0)) continue;
+                  if (!(severity === "error" || securitySeverity >= 7.0)) {
+                    continue;
+                  }
 
                   const message = result.message?.text || "";
-                  const ruleId = result.
+                  const ruleId = result.ruleId || result.rule?.id || "unknown-rule";
+                  const file =
+                    result.locations?.[0]?.physicalLocation?.artifactLocation?.uri ||
+                    "unknown file";
+                  const issueTitle = `CodeQL: [${severity.toUpperCase()}] ${ruleId}`;
+
+                  const { data: existingIssues } = await github.rest.issues.listForRepo({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    state: "open",
+                    labels: "auto-generated",
+                    per_page: 100
+                  });
+
+                  const duplicate = existingIssues.find(
+                    issue => issue.title === issueTitle
+                  );
+
+                  if (!duplicate) {
+                    const issueBody = [
+                      "**High/Critical CodeQL finding**",
+                      `**Rule:** ${ruleId}`,
+                      `**Message:** ${message}`,
+                      `**File:** ${file}`,
+                      `**Security severity:** ${securitySeverity}`,
+                      "",
+                      "This issue was auto-created and assigned to **GitHub Copilot Autofix**."
+                    ].join("\n");
+
+                    await github.rest.issues.create({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      title: issueTitle,
+                      body: issueBody,
+                      assignees: ["Copilot"],
+                      labels: ["auto-generated"]
+                    });
+                  }
+                }
+              }
+            }
