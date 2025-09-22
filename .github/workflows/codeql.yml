@@ -66,17 +66,23 @@ jobs:
             const path = require("path");
             const sarifDir = "sarif-result";
             const sarifFiles = fs.readdirSync(sarifDir).filter(f => f.endsWith(".sarif"));
+
             for (const sarifFile of sarifFiles) {
               const sarifPath = path.join(sarifDir, sarifFile);
               const sarif = JSON.parse(fs.readFileSync(sarifPath, "utf8"));
+
               for (const run of sarif.runs || []) {
                 for (const result of run.results || []) {
-                  const severity = result.level;
-                  if (severity !== "error") continue; 
+                  const severity = result.level || "note";
+                  const securitySeverity = parseFloat(result.properties?.["security-severity"] || "0");
+
+                  if (!(severity === "error" || securitySeverity >= 7.0)) continue;
+
                   const message = result.message?.text || "";
                   const ruleId = result.ruleId || result.rule?.id || "unknown-rule";
                   const file = result.locations?.[0]?.physicalLocation?.artifactLocation?.uri || "unknown file";
-                  const issueTitle = `CodeQL: [${severity}] ${ruleId}`;
+                  const issueTitle = `CodeQL: [${severity.toUpperCase()}] ${ruleId}`;
+
                   const { data: existingIssues } = await github.rest.issues.listForRepo({
                     owner: context.repo.owner,
                     repo: context.repo.repo,
@@ -84,29 +90,28 @@ jobs:
                     labels: "auto-generated",
                     per_page: 100
                   });
-                  
-                  console.log(existingIssues);
 
                   const duplicate = existingIssues.find(issue => issue.title === issueTitle);
 
-                  console.log(duplicate);
-                  
                   if (!duplicate) {
                     const issueBody = `
-                     **High/Critical CodeQL finding**
-                     **Rule:** ${ruleId}  
-                     **Message:** ${message}  
-                     **File:** ${file}
+                    **High/Critical CodeQL finding**
+                    **Rule:** ${ruleId}  
+                    **Message:** ${message}  
+                    **File:** ${file}  
+                    **Security severity:** ${securitySeverity}
 
-                   This issue was auto-created and assigned to **GitHub Copilot Autofix**.
+                    This issue was auto-created and assigned to **GitHub Copilot Autofix**.
                     `;
-                     await github.rest.issues.create({
+
+                    await github.rest.issues.create({
                       owner: context.repo.owner,
                       repo: context.repo.repo,
                       title: issueTitle,
                       body: issueBody,
-                      assignees: ["github-copilot-autofix"]
-                     });
+                      assignees: ["Copilot"],
+                      labels: ["auto-generated"]
+                    });
                   }
                 }
               }
