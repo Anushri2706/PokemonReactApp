@@ -24,6 +24,18 @@ jobs:
       matrix:
         language: [ 'javascript' ]
     steps:
+      - name: Get changed directories
+        id: changed
+        run: |
+          echo "dirs=$(git diff --name-only ${{ github.base_ref }}...${{ github.head_ref }} | grep '/' | cut -d'/' -f1 | sort -u | tr '\n' ' ')" >> $GITHUB_OUTPUT
+
+      - name: Run CodeQL only on changed directories
+        run: |
+          for dir in ${{ steps.changed.outputs.dirs }}; do
+          codeql database create db-$dir --language=cpp --source-root=$dir
+          codeql database analyze db-$dir --format=sarif-latest --output=results-$dir.sarif
+          done
+          
       - name: Checkout repository
         uses: actions/checkout@v4
 
