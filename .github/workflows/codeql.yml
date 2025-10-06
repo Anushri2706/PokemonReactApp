@@ -24,7 +24,6 @@ jobs:
       matrix:
         language: [ 'javascript' ]
     steps:
-
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -36,9 +35,20 @@ jobs:
       - name: Get changed directories
         id: changed
         run: |
+          echo "Base ref: ${{ github.base_ref }}"
+          echo "Head ref: ${{ github.head_ref }}"
+          echo "Changed files:"
+          git diff --name-only ${{ github.base_ref }}...${{ github.head_ref }}
+          echo "Directories with changes:"
           changed_dirs=$(git diff --name-only ${{ github.base_ref }}...${{ github.head_ref }} | grep '/' | cut -d'/' -f1 | sort -u | tr '\n' ' ')
+          echo "Found directories: '${changed_dirs}'"
           echo "dirs=${changed_dirs}" >> $GITHUB_OUTPUT
-          echo "has_changes=$([ -n '$changed_dirs' ] && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+          echo "has_changes=$([ -n '${changed_dirs}' ] && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+
+      - name: Debug changed directories output
+        run: |
+          echo "Directories to analyze: '${{ steps.changed.outputs.dirs }}'"
+          echo "Has changes: '${{ steps.changed.outputs.has_changes }}'"
 
       - name: Run CodeQL only on changed directories
         if: steps.changed.outputs.has_changes == 'true'
@@ -53,7 +63,6 @@ jobs:
         uses: github/codeql-action/analyze@v3
         with:
           output: ./codeql-results
-          format: sarif
 
       - name: Upload SARIF results
         uses: actions/upload-artifact@v4
