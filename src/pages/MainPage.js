@@ -6,7 +6,8 @@ function MainPage() {
     <div>
       <>
       <Main/>
-\      </>
+      <div></div>
+      </>
     </div>
   )
 }
