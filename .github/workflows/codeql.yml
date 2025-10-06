@@ -5,7 +5,9 @@ on:
   pull_request:
     branches: [ main ]
     paths-ignore:
-      - ".github/**"
+      - ".github/dependabot.yml"
+      - ".github/ISSUE_TEMPLATE/**"
+      - ".github/PULL_REQUEST_TEMPLATE.md"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
