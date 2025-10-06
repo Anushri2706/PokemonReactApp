@@ -34,15 +34,19 @@ jobs:
           languages: ${{ matrix.language }}
       
       - name: Get changed directories
+        id: changed
         run: |
-          echo "dirs=$(git diff --name-only ${{ github.base_ref }}...${{ github.head_ref }} | grep '/' | cut -d'/' -f1 | sort -u | tr '\n' ' ')" >> $GITHUB_OUTPUT
-          echo "dirs=${{ steps.changed.outputs.dirs }}" >> $GITHUB_OUTPUT
+          changed_dirs=$(git diff --name-only ${{ github.base_ref }}...${{ github.head_ref }} | grep '/' | cut -d'/' -f1 | sort -u | tr '\n' ' ')
+          echo "dirs=${changed_dirs}" >> $GITHUB_OUTPUT
+          echo "has_changes=$([ -n '$changed_dirs' ] && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
 
       - name: Run CodeQL only on changed directories
+        if: steps.changed.outputs.has_changes == 'true'
         run: |
           for dir in ${{ steps.changed.outputs.dirs }}; do
-          codeql database create db-$dir --language=cpp --source-root=$dir
-          codeql database analyze db-$dir --format=sarif-latest --output=results-$dir.sarif
+            echo "Analyzing directory: $dir"
+            codeql database create db-$dir --language=${{ matrix.language }} --source-root=$dir
+            codeql database analyze db-$dir --format=sarif-latest --output=results-$dir.sarif
           done
 
       - name: Perform CodeQL Analysis
